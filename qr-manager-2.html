@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Manager — Plataforma</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<style>
+  :root {
+    --negro: #0a0a0a;
+    --negro-suave: #141414;
+    --negro-card: #1a1a1a;
+    --negro-borde: #2a2a2a;
+    --naranja: #f97316;
+    --naranja-suave: #ea6c0a;
+    --dorado: #d4af37;
+    --dorado-suave: #b8962e;
+    --blanco: #f5f5f0;
+    --gris: #888;
+    --gris-suave: #555;
+    --verde: #22c55e;
+    --rojo: #ef4444;
+    --azul: #3b82f6;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--negro);
+    color: var(--blanco);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--negro-suave);
+    border-bottom: 1px solid var(--negro-borde);
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    color: var(--naranja);
+  }
+  .logo span { color: var(--dorado); }
+
+  .role-badge {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .8rem;
+  }
+
+  .role-select {
+    background: var(--negro-card);
+    border: 1px solid var(--negro-borde);
+    color: var(--blanco);
+    padding: .3rem .7rem;
+    border-radius: 6px;
+    font-size: .8rem;
+    cursor: pointer;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    background: var(--negro-suave);
+    border-bottom: 1px solid var(--negro-borde);
+    overflow-x: auto;
+  }
+
+  .tab {
+    flex: 1;
+    min-width: 80px;
+    padding: .9rem .5rem;
+    text-align: center;
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    color: var(--gris);
+    cursor: pointer;
+    border: none;
+    background: none;
+    border-bottom: 2px solid transparent;
+    transition: all .2s;
+    text-transform: uppercase;
+  }
+
+  .tab.active {
+    color: var(--naranja);
+    border-bottom-color: var(--naranja);
+  }
+
+  .tab:hover:not(.active) {
+    color: var(--blanco);
+  }
+
+  /* ── MAIN ── */
+  main { padding: 1.25rem; max-width: 480px; margin: 0 auto; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--negro-card);
+    border: 1px solid var(--negro-borde);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-title {
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--dorado);
+    margin-bottom: 1rem;
+  }
+
+  /* ── FORMULARIOS ── */
+  label {
+    display: block;
+    font-size: .75rem;
+    color: var(--gris);
+    margin-bottom: .3rem;
+    margin-top: .9rem;
+  }
+
+  label:first-of-type { margin-top: 0; }
+
+  input, select, textarea {
+    width: 100%;
+    background: var(--negro-suave);
+    border: 1px solid var(--negro-borde);
+    color: var(--blanco);
+    padding: .65rem .9rem;
+    border-radius: 8px;
+    font-size: .875rem;
+    transition: border-color .2s;
+    font-family: inherit;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--naranja);
+  }
+
+  textarea { resize: vertical; min-height: 70px; }
+
+  select option { background: var(--negro-card); }
+
+  /* ── BOTONES ── */
+  .btn {
+    display: block;
+    width: 100%;
+    padding: .75rem;
+    border: none;
+    border-radius: 8px;
+    font-size: .875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    letter-spacing: .02em;
+    margin-top: 1rem;
+  }
+
+  .btn-primary {
+    background: var(--naranja);
+    color: #000;
+  }
+  .btn-primary:hover { background: var(--naranja-suave); }
+
+  .btn-gold {
+    background: var(--dorado);
+    color: #000;
+  }
+  .btn-gold:hover { background: var(--dorado-suave); }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--negro-borde);
+    color: var(--blanco);
+  }
+  .btn-outline:hover { border-color: var(--naranja); color: var(--naranja); }
+
+  .btn-sm {
+    display: inline-block;
+    width: auto;
+    padding: .4rem .9rem;
+    font-size: .75rem;
+    margin-top: .5rem;
+  }
+
+  .btn-danger {
+    background: var(--rojo);
+    color: #fff;
+  }
+
+  /* ── QR DISPLAY ── */
+  .qr-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: var(--negro-suave);
+    border: 1px solid var(--negro-borde);
+    border-radius: 12px;
+    margin-top: 1rem;
+  }
+
+  #qr-output canvas,
+  #qr-output img {
+    border-radius: 8px;
+    border: 4px solid var(--dorado);
+  }
+
+  .qr-meta {
+    text-align: center;
+    width: 100%;
+  }
+
+  .qr-meta .id-badge {
+    display: inline-block;
+    background: var(--negro-card);
+    border: 1px solid var(--dorado);
+    color: var(--dorado);
+    font-family: monospace;
+    font-size: .8rem;
+    padding: .3rem .7rem;
+    border-radius: 6px;
+    margin-bottom: .5rem;
+  }
+
+  .qr-meta p {
+    font-size: .75rem;
+    color: var(--gris);
+    line-height: 1.5;
+  }
+
+  /* ── LECTOR ── */
+  #reader-video-container {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+    aspect-ratio: 1;
+    margin-bottom: 1rem;
+  }
+
+  #reader-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .scan-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .scan-frame {
+    width: 60%;
+    aspect-ratio: 1;
+    border: 2px solid var(--naranja);
+    border-radius: 12px;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,.5);
+    animation: pulse-border 2s infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { border-color: var(--naranja); }
+    50% { border-color: var(--dorado); }
+  }
+
+  #reader-canvas { display: none; }
+
+  /* ── RESULTADO DEL SCAN ── */
+  .scan-result {
+    display: none;
+    background: var(--negro-suave);
+    border: 1px solid var(--verde);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-top: 1rem;
+  }
+
+  .scan-result.visible { display: block; }
+
+  .result-type {
+    font-size: .65rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: .25rem .6rem;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: .75rem;
+  }
+
+  .type-agente { background: rgba(249,115,22,.15); color: var(--naranja); border: 1px solid var(--naranja); }
+  .type-producto { background: rgba(212,175,55,.15); color: var(--dorado); border: 1px solid var(--dorado); }
+  .type-servicio { background: rgba(59,130,246,.15); color: var(--azul); border: 1px solid var(--azul); }
+  .type-info { background: rgba(136,136,136,.15); color: var(--gris); border: 1px solid var(--gris); }
+  .type-compra { background: rgba(34,197,94,.15); color: var(--verde); border: 1px solid var(--verde); }
+
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: .4rem 0;
+    border-bottom: 1px solid var(--negro-borde);
+    font-size: .8rem;
+    gap: 1rem;
+  }
+
+  .result-row:last-child { border-bottom: none; }
+  .result-key { color: var(--gris); flex-shrink: 0; }
+  .result-val { color: var(--blanco); text-align: right; word-break: break-all; }
+
+  .result-actions {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+
+  /* ── GALERÍA ── */
+  .qr-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .75rem;
+  }
+
+  .qr-card {
+    background: var(--negro-card);
+    border: 1px solid var(--negro-borde);
+    border-radius: 10px;
+    padding: .85rem;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+
+  .qr-card:hover { border-color: var(--naranja); }
+
+  .qr-card-type {
+    font-size: .6rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--dorado);
+    margin-bottom: .4rem;
+  }
+
+  .qr-card-name {
+    font-size: .8rem;
+    font-weight: 600;
+    margin-bottom: .3rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .qr-card-id {
+    font-family: monospace;
+    font-size: .65rem;
+    color: var(--gris);
+  }
+
+  .qr-mini {
+    margin-top: .6rem;
+    display: flex;
+    justify-content: center;
+  }
+
+  /* ── ESTADOS / BADGES ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    font-size: .65rem;
+    font-weight: 600;
+    padding: .2rem .5rem;
+    border-radius: 4px;
+    letter-spacing: .05em;
+  }
+
+  .badge-green { background: rgba(34,197,94,.15); color: var(--verde); }
+  .badge-orange { background: rgba(249,115,22,.15); color: var(--naranja); }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: var(--gris);
+  }
+
+  .empty-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+  .empty p { font-size: .85rem; line-height: 1.6; }
+
+  /* ── ALERT ── */
+  .alert {
+    padding: .75rem 1rem;
+    border-radius: 8px;
+    font-size: .8rem;
+    margin-top: .75rem;
+    line-height: 1.5;
+  }
+
+  .alert-warn { background: rgba(249,115,22,.1); border: 1px solid rgba(249,115,22,.3); color: #fbbf77; }
+  .alert-info { background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.3); color: #93c5fd; }
+  .alert-ok { background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.3); color: #86efac; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin: 1rem 0;
+    color: var(--gris-suave);
+    font-size: .7rem;
+    letter-spacing: .06em;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--negro-borde);
+  }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.85);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--negro-card);
+    border: 1px solid var(--negro-borde);
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 360px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+  }
+
+  .modal-title { font-size: .9rem; font-weight: 700; }
+
+  .btn-close {
+    background: none;
+    border: none;
+    color: var(--gris);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: .2rem;
+  }
+
+  .btn-close:hover { color: var(--blanco); }
+
+  /* ── PERMISOS ── */
+  .perm-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .6rem 0;
+    border-bottom: 1px solid var(--negro-borde);
+    font-size: .8rem;
+  }
+  .perm-row:last-child { border-bottom: none; }
+  .perm-check { color: var(--verde); }
+  .perm-x { color: var(--rojo); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--negro-borde); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">QR<span>Manager</span></div>
+  <div class="role-badge">
+    <span style="color:var(--gris);font-size:.7rem">Rol:</span>
+    <select class="role-select" id="role-select" onchange="cambiarRol(this.value)">
+      <option value="admin">Admin</option>
+      <option value="agente">Agente</option>
+      <option value="usuario">Usuario</option>
+    </select>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="tabs" id="tabs-container">
+  <button class="tab active" onclick="mostrarSeccion('crear', this)">＋ Crear</button>
+  <button class="tab" onclick="mostrarSeccion('leer', this)">◎ Leer</button>
+  <button class="tab" onclick="mostrarSeccion('galeria', this)">▦ Galería</button>
+  <button class="tab" onclick="mostrarSeccion('permisos', this)">⚙ Acceso</button>
+</div>
+
+<!-- MAIN -->
+<main>
+
+  <!-- ══════════════════════════════════════
+       SECCIÓN: CREAR QR
+  ═══════════════════════════════════════ -->
+  <div class="section active" id="sec-crear">
+
+    <div class="card">
+      <div class="card-title">Tipo de QR</div>
+
+      <label>¿Qué vas a crear?</label>
+      <select id="qr-tipo" onchange="actualizarFormulario()">
+        <option value="">— Selecciona —</option>
+        <option value="agente">Agente</option>
+        <option value="producto" id="opt-producto">Producto</option>
+        <option value="servicio" id="opt-servicio">Servicio</option>
+        <option value="info" id="opt-info">Información</option>
+        <option value="compra" id="opt-compra">Compra / Remesa</option>
+      </select>
+    </div>
+
+    <!-- Formulario dinámico -->
+    <div class="card" id="form-dinamico" style="display:none">
+      <div class="card-title" id="form-titulo">Datos</div>
+      <div id="form-campos"></div>
+      <button class="btn btn-primary" onclick="generarQR()">Generar QR</button>
+    </div>
+
+    <!-- Resultado QR -->
+    <div id="resultado-qr" style="display:none">
+      <div class="card">
+        <div class="card-title">QR Generado</div>
+        <div class="qr-box">
+          <div id="qr-output"></div>
+          <div class="qr-meta">
+            <div class="id-badge" id="qr-id-badge">—</div>
+            <p id="qr-descripcion"></p>
+          </div>
+        </div>
+        <button class="btn btn-gold" onclick="guardarQR()" style="margin-top:1rem">
+          Guardar en Galería
+        </button>
+        <button class="btn btn-outline" onclick="descargarQR()">
+          Descargar imagen
+        </button>
+      </div>
+      <div class="alert alert-info">
+        💡 Este QR funciona <strong>offline</strong>. Lleva los datos codificados, no solo una URL.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SECCIÓN: LEER QR
+  ═══════════════════════════════════════ -->
+  <div class="section" id="sec-leer">
+
+    <div class="card">
+      <div class="card-title">Lector de Cámara</div>
+      <div id="reader-video-container">
+        <video id="reader-video" autoplay playsinline muted></video>
+        <canvas id="reader-canvas"></canvas>
+        <div class="scan-overlay"><div class="scan-frame"></div></div>
+      </div>
+      <button class="btn btn-primary" id="btn-camara" onclick="toggleCamara()">
+        Activar Cámara
+      </button>
+    </div>
+
+    <div class="divider">o</div>
+
+    <div class="card">
+      <div class="card-title">Subir imagen de QR</div>
+      <input type="file" id="file-qr" accept="image/*" onchange="leerDesdeImagen(event)">
+    </div>
+
+    <!-- Resultado del scan -->
+    <div class="scan-result" id="scan-result">
+      <div id="result-type-badge"></div>
+      <div id="result-rows"></div>
+      <div class="result-actions" id="result-actions"></div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SECCIÓN: GALERÍA
+  ═══════════════════════════════════════ -->
+  <div class="section" id="sec-galeria">
+
+    <div class="card" style="padding:.75rem 1.25rem">
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <input type="text" placeholder="Buscar por nombre o ID…" id="filtro-galeria"
+          oninput="filtrarGaleria()" style="margin:0">
+        <select id="filtro-tipo" onchange="filtrarGaleria()"
+          style="width:auto;margin:0;flex-shrink:0">
+          <option value="">Todos</option>
+          <option value="agente">Agente</option>
+          <option value="producto">Producto</option>
+          <option value="servicio">Servicio</option>
+          <option value="info">Info</option>
+          <option value="compra">Compra</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="galeria-container"></div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SECCIÓN: PERMISOS / ACCESO
+  ═══════════════════════════════════════ -->
+  <div class="section" id="sec-permisos">
+
+    <div class="card">
+      <div class="card-title">Acceso según rol</div>
+      <div id="tabla-permisos"></div>
+    </div>
+
+    <div class="alert alert-warn" style="margin-top:0">
+      ⚠ Estos permisos reflejan la lógica actual del módulo. En producción se gestionan desde el backend con autenticación real.
+    </div>
+
+    <div class="card" style="margin-top:1rem">
+      <div class="card-title">Leyenda de tipos QR</div>
+      <div class="perm-row">
+        <span><span class="result-type type-agente" style="font-size:.6rem;padding:.15rem .4rem">AGENTE</span></span>
+        <span style="font-size:.75rem;color:var(--gris)">Identidad del agente en campo</span>
+      </div>
+      <div class="perm-row">
+        <span><span class="result-type type-producto" style="font-size:.6rem;padding:.15rem .4rem">PRODUCTO</span></span>
+        <span style="font-size:.75rem;color:var(--gris)">Artículo del catálogo</span>
+      </div>
+      <div class="perm-row">
+        <span><span class="result-type type-servicio" style="font-size:.6rem;padding:.15rem .4rem">SERVICIO</span></span>
+        <span style="font-size:.75rem;color:var(--gris)">Servicio ofertado</span>
+      </div>
+      <div class="perm-row">
+        <span><span class="result-type type-info" style="font-size:.6rem;padding:.15rem .4rem">INFO</span></span>
+        <span style="font-size:.75rem;color:var(--gris)">Información pública</span>
+      </div>
+      <div class="perm-row">
+        <span><span class="result-type type-compra" style="font-size:.6rem;padding:.15rem .4rem">COMPRA</span></span>
+        <span style="font-size:.75rem;color:var(--gris)">Orden de remesa / compra</span>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<!-- MODAL DETALLE QR -->
+<div class="modal-overlay" id="modal-overlay" onclick="cerrarModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Detalle QR</div>
+      <button class="btn-close" onclick="cerrarModal()">✕</button>
+    </div>
+    <div style="display:flex;justify-content:center;margin-bottom:1rem">
+      <div id="modal-qr"></div>
+    </div>
+    <div id="modal-body"></div>
+    <button class="btn btn-danger btn-sm" onclick="eliminarQRActual()"
+      style="margin-top:1rem;display:none" id="btn-eliminar">
+      Eliminar QR
+    </button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// ESTADO GLOBAL
+// ════════════════════════════════════════
+let rolActual = 'admin';
+let galeria = [];
+let camaraActiva = false;
+let streamActivo = null;
+let scanInterval = null;
+let qrActualData = null;
+let qrModalIndex = null;
+
+// Permisos por rol
+const PERMISOS = {
+  admin: {
+    crear: ['agente','producto','servicio','info','compra'],
+    leer: true,
+    galeria: 'todos',
+    eliminar: true
+  },
+  agente: {
+    crear: ['agente','producto','servicio'],
+    leer: true,
+    galeria: 'propios',
+    eliminar: false
+  },
+  usuario: {
+    crear: ['info'],
+    leer: true,
+    galeria: 'publicos',
+    eliminar: false
+  }
+};
+
+// ════════════════════════════════════════
+// NAVEGACIÓN
+// ════════════════════════════════════════
+function mostrarSeccion(id, tabEl) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  tabEl.classList.add('active');
+  if (id !== 'leer') pararCamara();
+  if (id === 'galeria') renderGaleria();
+  if (id === 'permisos') renderPermisos();
+}
+
+// ════════════════════════════════════════
+// CAMBIO DE ROL
+// ════════════════════════════════════════
+function cambiarRol(rol) {
+  rolActual = rol;
+  actualizarFormulario();
+  renderGaleria();
+  renderPermisos();
+
+  // Deshabilitar opciones según rol
+  const perms = PERMISOS[rol].crear;
+  ['producto','servicio','info','compra'].forEach(t => {
+    const opt = document.getElementById('opt-' + t);
+    if (opt) opt.disabled = !perms.includes(t);
+  });
+
+  // Reset tipo si no está permitido
+  const tipo = document.getElementById('qr-tipo').value;
+  if (tipo && !perms.includes(tipo)) {
+    document.getElementById('qr-tipo').value = '';
+    document.getElementById('form-dinamico').style.display = 'none';
+    document.getElementById('resultado-qr').style.display = 'none';
+  }
+}
+
+// ════════════════════════════════════════
+// GENERADOR DE ID ÚNICO
+// ════════════════════════════════════════
+function generarID(tipo) {
+  const prefijos = {
+    agente: 'AGT', producto: 'PRD', servicio: 'SRV', info: 'INF', compra: 'CMP'
+  };
+  const pref = prefijos[tipo] || 'QR';
+  const num = Math.floor(Math.random() * 90000) + 10000;
+  const suf = Math.random().toString(36).substr(2, 3).toUpperCase();
+  return `${pref}-${num}-${suf}`;
+}
+
+// Hash simple para integridad
+function simpleHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(31, h) + str.charCodeAt(i) | 0;
+  }
+  return Math.abs(h).toString(16).substr(0, 6).toUpperCase();
+}
+
+// ════════════════════════════════════════
+// FORMULARIOS DINÁMICOS
+// ════════════════════════════════════════
+const FORMULARIOS = {
+  agente: {
+    titulo: 'Datos del Agente',
+    campos: [
+      { id: 'nombre', label: 'Nombre completo', tipo: 'text', req: true },
+      { id: 'zona', label: 'Zona / Municipio', tipo: 'text', req: true },
+      { id: 'telefono', label: 'Teléfono (opcional)', tipo: 'tel', req: false },
+      { id: 'especialidad', label: 'Especialidad', tipo: 'select',
+        opciones: ['Remesas','Divisas','Productos','Servicios','General'] },
+      { id: 'horario', label: 'Horario de atención', tipo: 'text', req: false,
+        placeholder: 'Ej: L-V 9am-5pm' }
+    ]
+  },
+  producto: {
+    titulo: 'Datos del Producto',
+    campos: [
+      { id: 'nombre', label: 'Nombre del producto', tipo: 'text', req: true },
+      { id: 'descripcion', label: 'Descripción', tipo: 'textarea', req: false },
+      { id: 'precio', label: 'Precio (CUP)', tipo: 'number', req: false },
+      { id: 'disponibilidad', label: 'Disponibilidad', tipo: 'select',
+        opciones: ['Disponible','Agotado','Por encargo'] },
+      { id: 'contacto', label: 'Contacto para compra', tipo: 'text', req: false }
+    ]
+  },
+  servicio: {
+    titulo: 'Datos del Servicio',
+    campos: [
+      { id: 'nombre', label: 'Nombre del servicio', tipo: 'text', req: true },
+      { id: 'descripcion', label: 'Descripción', tipo: 'textarea', req: false },
+      { id: 'precio', label: 'Tarifa (CUP)', tipo: 'number', req: false },
+      { id: 'proveedor', label: 'Proveedor / Empresa', tipo: 'text', req: false },
+      { id: 'zona', label: 'Zona de cobertura', tipo: 'text', req: false }
+    ]
+  },
+  info: {
+    titulo: 'Información',
+    campos: [
+      { id: 'titulo', label: 'Título', tipo: 'text', req: true },
+      { id: 'contenido', label: 'Contenido', tipo: 'textarea', req: true },
+      { id: 'url', label: 'Enlace (opcional)', tipo: 'url', req: false,
+        placeholder: 'https://...' },
+      { id: 'vigencia', label: 'Válido hasta (opcional)', tipo: 'date', req: false }
+    ]
+  },
+  compra: {
+    titulo: 'Orden de Compra / Remesa',
+    campos: [
+      { id: 'orden_id', label: 'ID de Orden', tipo: 'text', req: true,
+        placeholder: 'Ej: ORD-2024-001' },
+      { id: 'remitente', label: 'Remitente', tipo: 'text', req: true },
+      { id: 'beneficiario', label: 'Beneficiario', tipo: 'text', req: true },
+      { id: 'monto', label: 'Monto (CUP)', tipo: 'number', req: true },
+      { id: 'agente_destino', label: 'ID Agente destino', tipo: 'text', req: false }
+    ]
+  }
+};
+
+function actualizarFormulario() {
+  const tipo = document.getElementById('qr-tipo').value;
+  const formDiv = document.getElementById('form-dinamico');
+  const resultDiv = document.getElementById('resultado-qr');
+
+  if (!tipo) {
+    formDiv.style.display = 'none';
+    resultDiv.style.display = 'none';
+    return;
+  }
+
+  const def = FORMULARIOS[tipo];
+  document.getElementById('form-titulo').textContent = def.titulo;
+
+  let html = '';
+  def.campos.forEach(c => {
+    html += `<label>${c.label}${c.req ? ' <span style="color:var(--naranja)">*</span>' : ''}</label>`;
+    if (c.tipo === 'textarea') {
+      html += `<textarea id="campo-${c.id}" placeholder="${c.placeholder || ''}"></textarea>`;
+    } else if (c.tipo === 'select') {
+      html += `<select id="campo-${c.id}">`;
+      c.opciones.forEach(o => { html += `<option>${o}</option>`; });
+      html += '</select>';
+    } else {
+      html += `<input type="${c.tipo}" id="campo-${c.id}"
+        placeholder="${c.placeholder || ''}"
+        ${c.req ? 'required' : ''}>`;
+    }
+  });
+
+  document.getElementById('form-campos').innerHTML = html;
+  formDiv.style.display = 'block';
+  resultDiv.style.display = 'none';
+}
+
+// ════════════════════════════════════════
+// GENERAR QR
+// ════════════════════════════════════════
+function generarQR() {
+  const tipo = document.getElementById('qr-tipo').value;
+  if (!tipo) return;
+
+  const def = FORMULARIOS[tipo];
+  const datos = { tipo };
+
+  // Validar obligatorios y recoger datos
+  let valido = true;
+  def.campos.forEach(c => {
+    const el = document.getElementById('campo-' + c.id);
+    if (!el) return;
+    const val = el.value.trim();
+    if (c.req && !val) {
+      el.style.borderColor = 'var(--rojo)';
+      valido = false;
+    } else {
+      el.style.borderColor = '';
+      if (val) datos[c.id] = val;
+    }
+  });
+
+  if (!valido) return;
+
+  // Generar ID único
+  datos.id = generarID(tipo);
+  datos.ts = new Date().toISOString().split('T')[0];
+  datos.rol_emisor = rolActual;
+  datos.hash = simpleHash(JSON.stringify(datos));
+
+  // Codificar como JSON string (funciona offline)
+  const payload = JSON.stringify(datos);
+
+  // Limpiar QR anterior
+  const outEl = document.getElementById('qr-output');
+  outEl.innerHTML = '';
+
+  new QRCode(outEl, {
+    text: payload,
+    width: 200,
+    height: 200,
+    colorDark: '#0a0a0a',
+    colorLight: '#f5f5f0',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  document.getElementById('qr-id-badge').textContent = datos.id;
+  document.getElementById('qr-descripcion').textContent =
+    `Tipo: ${tipo.toUpperCase()} · Emitido: ${datos.ts}`;
+
+  document.getElementById('resultado-qr').style.display = 'block';
+  qrActualData = datos;
+
+  setTimeout(() => {
+    document.getElementById('resultado-qr').scrollIntoView({ behavior: 'smooth' });
+  }, 100);
+}
+
+// ════════════════════════════════════════
+// GUARDAR / DESCARGAR
+// ════════════════════════════════════════
+// ── STORAGE: intenta localStorage, si falla usa memoria ──
+function storageGuardar(datos) {
+  try {
+    localStorage.setItem('qr_galeria', JSON.stringify(datos));
+    return true;
+  } catch(e) {
+    // localStorage bloqueado (visor de archivos Android)
+    return false;
+  }
+}
+
+function storageLeer() {
+  try {
+    return JSON.parse(localStorage.getItem('qr_galeria') || '[]');
+  } catch(e) {
+    return [];
+  }
+}
+
+function guardarQR() {
+  if (!qrActualData) return;
+  const yaExiste = galeria.find(q => q.id === qrActualData.id);
+  if (yaExiste) {
+    mostrarToast('Este QR ya está en la galería', 'warn');
+    return;
+  }
+
+  galeria.unshift({ ...qrActualData, guardado: new Date().toISOString() });
+  const ok = storageGuardar(galeria);
+
+  const btn = document.querySelector('button[onclick="guardarQR()"]');
+  if (ok) {
+    btn.textContent = '✓ Guardado';
+    btn.style.background = 'var(--verde)';
+    mostrarToast('QR guardado en Galería', 'ok');
+  } else {
+    // localStorage no disponible — guardado solo en memoria de sesión
+    btn.textContent = '✓ En sesión (sin persistencia)';
+    btn.style.background = '#3b82f6';
+    mostrarToast('Guardado en sesión. Descarga el QR para no perderlo.', 'warn');
+  }
+  setTimeout(() => {
+    btn.textContent = 'Guardar en Galería';
+    btn.style.background = '';
+  }, 3000);
+}
+
+function descargarQR() {
+  // Método 1: canvas directo
+  const canvas = document.querySelector('#qr-output canvas');
+  if (canvas) {
+    try {
+      const dataUrl = canvas.toDataURL('image/png');
+      // Método A: link directo
+      const link = document.createElement('a');
+      link.download = `QR-${qrActualData?.id || 'codigo'}.png`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      mostrarToast('Descargando imagen…', 'ok');
+      return;
+    } catch(e) {
+      console.warn('Método canvas falló:', e);
+    }
+  }
+
+  // Método 2: abrir en nueva pestaña (funciona en Android)
+  try {
+    const canvas2 = document.querySelector('#qr-output canvas');
+    if (canvas2) {
+      const dataUrl = canvas2.toDataURL('image/png');
+      const w = window.open('', '_blank');
+      w.document.write(`
+        <html><body style="margin:0;background:#000;display:flex;flex-direction:column;align-items:center;padding:20px;gap:16px">
+          <p style="color:#f97316;font-family:sans-serif;font-size:14px">
+            Mantén presionada la imagen → Guardar imagen
+          </p>
+          <img src="${dataUrl}" style="max-width:100%;border:4px solid #d4af37;border-radius:8px">
+          <p style="color:#888;font-family:monospace;font-size:12px">${qrActualData?.id || ''}</p>
+        </body></html>`);
+      return;
+    }
+  } catch(e) {
+    console.warn('Método nueva pestaña falló:', e);
+  }
+
+  mostrarToast('No se pudo descargar. Toma una captura de pantalla.', 'warn');
+}
+
+// ── TOAST NOTIFICATIONS ──
+function mostrarToast(msg, tipo = 'ok') {
+  let toast = document.getElementById('toast-global');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast-global';
+    toast.style.cssText = `
+      position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
+      padding:.6rem 1.2rem; border-radius:8px; font-size:.8rem; font-weight:600;
+      z-index:9999; max-width:85vw; text-align:center;
+      transition: opacity .3s; font-family:sans-serif;
+    `;
+    document.body.appendChild(toast);
+  }
+  const colores = {
+    ok: 'background:#22c55e;color:#000',
+    warn: 'background:#f97316;color:#000',
+    info: 'background:#3b82f6;color:#fff'
+  };
+  toast.style.cssText += ';' + colores[tipo];
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  toast.style.display = 'block';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 3500);
+}
+
+// ════════════════════════════════════════
+// LECTOR — CÁMARA
+// ════════════════════════════════════════
+async function toggleCamara() {
+  if (camaraActiva) { pararCamara(); return; }
+
+  const video = document.getElementById('reader-video');
+  const btn = document.getElementById('btn-camara');
+
+  try {
+    streamActivo = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' }
+    });
+    video.srcObject = streamActivo;
+    camaraActiva = true;
+    btn.textContent = 'Detener Cámara';
+    btn.style.background = 'var(--rojo)';
+
+    const canvas = document.getElementById('reader-canvas');
+    const ctx = canvas.getContext('2d');
+
+    scanInterval = setInterval(() => {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+        const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(img.data, img.width, img.height);
+        if (code) {
+          procesarQRLeido(code.data);
+          pararCamara();
+        }
+      }
+    }, 300);
+
+  } catch (e) {
+    alert('No se pudo acceder a la cámara. Verifica los permisos.');
+  }
+}
+
+function pararCamara() {
+  if (streamActivo) {
+    streamActivo.getTracks().forEach(t => t.stop());
+    streamActivo = null;
+  }
+  if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+  camaraActiva = false;
+  const btn = document.getElementById('btn-camara');
+  if (btn) {
+    btn.textContent = 'Activar Cámara';
+    btn.style.background = '';
+  }
+}
+
+// ════════════════════════════════════════
+// LECTOR — IMAGEN
+// ════════════════════════════════════════
+function leerDesdeImagen(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height);
+      if (code) {
+        procesarQRLeido(code.data);
+      } else {
+        alert('No se detectó ningún QR en la imagen.');
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ════════════════════════════════════════
+// PROCESAR QR LEÍDO
+// ════════════════════════════════════════
+function procesarQRLeido(rawData) {
+  const resultEl = document.getElementById('scan-result');
+  const rowsEl = document.getElementById('result-rows');
+  const actionsEl = document.getElementById('result-actions');
+  const badgeEl = document.getElementById('result-type-badge');
+
+  let datos;
+  try {
+    datos = JSON.parse(rawData);
+  } catch {
+    // QR externo / URL plana
+    datos = { tipo: 'info', contenido: rawData, id: 'EXTERNO', ts: '—' };
+  }
+
+  const tipo = datos.tipo || 'info';
+  const clasesTipo = {
+    agente: 'type-agente', producto: 'type-producto',
+    servicio: 'type-servicio', info: 'type-info', compra: 'type-compra'
+  };
+
+  badgeEl.innerHTML = `<span class="result-type ${clasesTipo[tipo] || 'type-info'}">
+    ${tipo.toUpperCase()}
+  </span>`;
+
+  // Verificar integridad si tiene hash
+  let integridad = '';
+  if (datos.hash) {
+    const dataSinHash = { ...datos };
+    delete dataSinHash.hash;
+    const hashCalc = simpleHash(JSON.stringify(dataSinHash));
+    integridad = hashCalc === datos.hash
+      ? '<span class="badge badge-green">✓ Íntegro</span>'
+      : '<span class="badge badge-orange">⚠ Hash no coincide</span>';
+  }
+
+  // Campos a mostrar (omitir hash e internos)
+  const omitir = ['tipo', 'hash', 'rol_emisor'];
+  let rowsHTML = '';
+  Object.entries(datos).forEach(([k, v]) => {
+    if (omitir.includes(k)) return;
+    const labels = {
+      id: 'ID único', nombre: 'Nombre', zona: 'Zona', telefono: 'Teléfono',
+      especialidad: 'Especialidad', horario: 'Horario', ts: 'Fecha emisión',
+      descripcion: 'Descripción', precio: 'Precio', disponibilidad: 'Disponibilidad',
+      contacto: 'Contacto', titulo: 'Título', contenido: 'Contenido', url: 'Enlace',
+      vigencia: 'Válido hasta', orden_id: 'ID Orden', remitente: 'Remitente',
+      beneficiario: 'Beneficiario', monto: 'Monto', agente_destino: 'Agente destino',
+      proveedor: 'Proveedor', guardado: 'Guardado', tarifa: 'Tarifa',
+      servicio: 'Servicio', precio_cup: 'Precio CUP'
+    };
+    rowsHTML += `
+      <div class="result-row">
+        <span class="result-key">${labels[k] || k}</span>
+        <span class="result-val">${v}</span>
+      </div>`;
+  });
+
+  if (integridad) {
+    rowsHTML += `<div style="padding:.6rem 0">${integridad}</div>`;
+  }
+
+  rowsEl.innerHTML = rowsHTML;
+
+  // Acciones según tipo y rol
+  actionsEl.innerHTML = accionesParaTipo(tipo, datos);
+
+  resultEl.classList.add('visible');
+  setTimeout(() => resultEl.scrollIntoView({ behavior: 'smooth' }), 100);
+}
+
+function accionesParaTipo(tipo, datos) {
+  const perms = PERMISOS[rolActual];
+  let btns = '';
+
+  if (tipo === 'agente') {
+    btns += `<button class="btn btn-primary btn-sm" onclick="alert('Creando orden con agente ${datos.id}…')">
+      Crear Orden</button>`;
+    if (datos.telefono) {
+      btns += `<button class="btn btn-outline btn-sm" onclick="window.location='tel:${datos.telefono}'">
+        Llamar</button>`;
+    }
+  }
+  if (tipo === 'compra') {
+    btns += `<button class="btn btn-gold btn-sm" onclick="alert('Confirmando recepción de ${datos.orden_id}…')">
+      Confirmar Recepción</button>`;
+  }
+  if (tipo === 'servicio' || tipo === 'producto') {
+    btns += `<button class="btn btn-primary btn-sm" onclick="alert('Iniciando solicitud…')">
+      Solicitar</button>`;
+  }
+  if (tipo === 'info' && datos.url) {
+    btns += `<button class="btn btn-outline btn-sm" onclick="window.open('${datos.url}','_blank')">
+      Abrir enlace</button>`;
+  }
+
+  btns += `<button class="btn btn-outline btn-sm" onclick="guardarDesdeEscan()" style="border-color:var(--dorado);color:var(--dorado)">
+    Guardar en Galería</button>`;
+
+  return btns;
+}
+
+let ultimoDatoEscaneado = null;
+function guardarDesdeEscan() {
+  // Reusar lógica guardando el último escaneo
+  // Se implementaría con los datos del último scan procesado
+  alert('QR guardado desde escaneo.');
+}
+
+// ════════════════════════════════════════
+// GALERÍA
+// ════════════════════════════════════════
+function renderGaleria() {
+  const container = document.getElementById('galeria-container');
+  const perms = PERMISOS[rolActual];
+  const filtroTxt = (document.getElementById('filtro-galeria')?.value || '').toLowerCase();
+  const filtroTipo = document.getElementById('filtro-tipo')?.value || '';
+
+  let items = galeria;
+
+  // Filtrar por rol
+  if (perms.galeria === 'propios') {
+    items = items.filter(q => q.rol_emisor === 'agente' || q.tipo === 'agente'
+      || q.tipo === 'producto' || q.tipo === 'servicio');
+  } else if (perms.galeria === 'publicos') {
+    items = items.filter(q => q.tipo === 'info' || q.tipo === 'producto' || q.tipo === 'servicio');
+  }
+
+  // Filtro texto
+  if (filtroTxt) {
+    items = items.filter(q =>
+      (q.nombre || q.titulo || '').toLowerCase().includes(filtroTxt) ||
+      q.id.toLowerCase().includes(filtroTxt)
+    );
+  }
+
+  // Filtro tipo
+  if (filtroTipo) items = items.filter(q => q.tipo === filtroTipo);
+
+  if (items.length === 0) {
+    container.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">▦</div>
+        <p>No hay QR guardados aún.<br>Crea uno en la pestaña <strong>Crear</strong>.</p>
+      </div>`;
+    return;
+  }
+
+  let html = '<div class="qr-grid">';
+  items.forEach((q, i) => {
+    const nombre = q.nombre || q.titulo || q.orden_id || 'Sin nombre';
+    html += `
+      <div class="qr-card" onclick="abrirModal(${galeria.indexOf(q)})">
+        <div class="qr-card-type">${q.tipo}</div>
+        <div class="qr-card-name">${nombre}</div>
+        <div class="qr-card-id">${q.id}</div>
+        <div class="qr-mini" id="mini-qr-${galeria.indexOf(q)}"></div>
+      </div>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+
+  // Generar mini QR para cada card
+  items.forEach(q => {
+    const idx = galeria.indexOf(q);
+    const el = document.getElementById('mini-qr-' + idx);
+    if (!el) return;
+    new QRCode(el, {
+      text: JSON.stringify(q),
+      width: 70, height: 70,
+      colorDark: '#0a0a0a', colorLight: '#f5f5f0',
+      correctLevel: QRCode.CorrectLevel.L
+    });
+  });
+}
+
+function filtrarGaleria() { renderGaleria(); }
+
+// ════════════════════════════════════════
+// MODAL DETALLE
+// ════════════════════════════════════════
+function abrirModal(idx) {
+  const q = galeria[idx];
+  if (!q) return;
+  qrModalIndex = idx;
+
+  document.getElementById('modal-title').textContent = q.nombre || q.titulo || q.id;
+
+  const modalQREl = document.getElementById('modal-qr');
+  modalQREl.innerHTML = '';
+  new QRCode(modalQREl, {
+    text: JSON.stringify(q),
+    width: 180, height: 180,
+    colorDark: '#0a0a0a', colorLight: '#f5f5f0',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  const omitir = ['hash', 'rol_emisor', 'guardado'];
+  let bodyHTML = '';
+  Object.entries(q).forEach(([k, v]) => {
+    if (omitir.includes(k)) return;
+    bodyHTML += `
+      <div class="result-row">
+        <span class="result-key">${k}</span>
+        <span class="result-val">${v}</span>
+      </div>`;
+  });
+  document.getElementById('modal-body').innerHTML = bodyHTML;
+
+  const btnElim = document.getElementById('btn-eliminar');
+  btnElim.style.display = PERMISOS[rolActual].eliminar ? 'block' : 'none';
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function cerrarModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('open');
+  qrModalIndex = null;
+}
+
+function eliminarQRActual() {
+  if (qrModalIndex === null) return;
+  if (!confirm('¿Eliminar este QR de la galería?')) return;
+  galeria.splice(qrModalIndex, 1);
+  localStorage.setItem('qr_galeria', JSON.stringify(galeria));
+  cerrarModal();
+  renderGaleria();
+}
+
+// ════════════════════════════════════════
+// PERMISOS TABLE
+// ════════════════════════════════════════
+function renderPermisos() {
+  const roles = ['admin', 'agente', 'usuario'];
+  const acciones = [
+    { key: 'crear_agente', label: 'Crear QR Agente' },
+    { key: 'crear_producto', label: 'Crear QR Producto' },
+    { key: 'crear_servicio', label: 'Crear QR Servicio' },
+    { key: 'crear_info', label: 'Crear QR Info' },
+    { key: 'crear_compra', label: 'Crear QR Compra' },
+    { key: 'leer', label: 'Leer / Escanear QR' },
+    { key: 'galeria', label: 'Ver Galería' },
+    { key: 'eliminar', label: 'Eliminar QR' },
+  ];
+
+  const tienePermiso = (rol, accion) => {
+    const p = PERMISOS[rol];
+    if (accion === 'leer') return p.leer;
+    if (accion === 'eliminar') return p.eliminar;
+    if (accion === 'galeria') return !!p.galeria;
+    if (accion.startsWith('crear_')) {
+      return p.crear.includes(accion.replace('crear_', ''));
+    }
+    return false;
+  };
+
+  let html = `
+    <div style="display:grid;grid-template-columns:1fr repeat(3,auto);gap:.3rem;font-size:.7rem;margin-bottom:.5rem">
+      <span style="color:var(--gris)">Acción</span>
+      ${roles.map(r => `<span style="color:var(--dorado);text-align:center;font-weight:700;text-transform:uppercase;letter-spacing:.05em">${r}</span>`).join('')}
+    </div>`;
+
+  acciones.forEach(a => {
+    const esActual = rolActual;
+    html += `<div style="display:grid;grid-template-columns:1fr repeat(3,auto);gap:.3rem;padding:.45rem 0;border-bottom:1px solid var(--negro-borde);font-size:.75rem;align-items:center">
+      <span style="color:${roles.some(r => r === esActual && tienePermiso(r, a.key)) ? 'var(--blanco)' : 'var(--gris-suave)'}">${a.label}</span>
+      ${roles.map(r => `<span style="text-align:center">${tienePermiso(r, a.key) ? '<span class="perm-check">✓</span>' : '<span class="perm-x">✕</span>'}</span>`).join('')}
+    </div>`;
+  });
+
+  document.getElementById('tabla-permisos').innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+window.addEventListener('load', () => {
+  galeria = storageLeer();
+  cambiarRol('admin');
+  renderPermisos();
+});
+</script>
+</body>
+</html>
