@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║           QR MANAGER — MÓDULO EMBEBIBLE                     ║
+  ║           Verbum Tech Solution                               ║
+  ║                                                              ║
+  ║  Este archivo está diseñado para usarse como:               ║
+  ║    · iframe dentro de otra aplicación                       ║
+  ║    · página standalone con parámetros URL                   ║
+  ║                                                              ║
+  ║  Parámetros URL disponibles:                                 ║
+  ║    ?rol=admin|agente|usuario                                 ║
+  ║    ?tipo=agente|producto|servicio|info|compra                ║
+  ║    ?modo=crear|leer|galeria                                  ║
+  ║    ?color_primario=%23f97316                                 ║
+  ║    ?color_secundario=%23d4af37                               ║
+  ║                                                              ║
+  ║  Comunicación con plataforma padre via postMessage:          ║
+  ║    window.parent.postMessage({                               ║
+  ║      evento: 'qr_generado' | 'qr_leido',                    ║
+  ║      datos: { ...camposQR }                                  ║
+  ║    }, '*')                                                   ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Manager — Módulo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<style>
+  :root {
+    --primario: #f97316;
+    --secundario: #d4af37;
+    --negro: #0a0a0a;
+    --negro-card: #1a1a1a;
+    --negro-borde: #2a2a2a;
+    --blanco: #f5f5f0;
+    --gris: #888;
+    --verde: #22c55e;
+    --rojo: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--negro);
+    color: var(--blanco);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    padding: 1rem;
+  }
+  .modulo-header {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 1rem;
+    padding-bottom: .75rem;
+    border-bottom: 1px solid var(--negro-borde);
+  }
+  .modulo-badge {
+    font-size: .65rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    background: rgba(249,115,22,.1);
+    border: 1px solid var(--primario);
+    color: var(--primario);
+    padding: .2rem .6rem;
+    border-radius: 4px;
+  }
+  .modulo-titulo {
+    font-size: .9rem;
+    font-weight: 700;
+    color: var(--blanco);
+  }
+  .modo-tabs {
+    display: flex;
+    gap: .5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .modo-btn {
+    padding: .4rem .9rem;
+    border-radius: 6px;
+    font-size: .75rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--negro-borde);
+    background: var(--negro-card);
+    color: var(--gris);
+    transition: all .2s;
+  }
+  .modo-btn.active {
+    background: var(--primario);
+    border-color: var(--primario);
+    color: #000;
+  }
+  /* Reutilizar estilos base */
+  label { display:block; font-size:.75rem; color:var(--gris); margin-bottom:.3rem; margin-top:.75rem; }
+  input, select, textarea {
+    width:100%; background:var(--negro-card); border:1px solid var(--negro-borde);
+    color:var(--blanco); padding:.6rem .85rem; border-radius:8px; font-size:.85rem;
+    font-family:inherit;
+  }
+  input:focus, select:focus { outline:none; border-color:var(--primario); }
+  textarea { resize:vertical; min-height:60px; }
+  .btn {
+    display:block; width:100%; padding:.7rem; border:none; border-radius:8px;
+    font-size:.85rem; font-weight:600; cursor:pointer; margin-top:.75rem;
+  }
+  .btn-p { background:var(--primario); color:#000; }
+  .btn-s { background:var(--secundario); color:#000; }
+  .btn-o { background:transparent; border:1px solid var(--negro-borde); color:var(--blanco); }
+  .qr-box {
+    display:flex; flex-direction:column; align-items:center; gap:.75rem;
+    padding:1rem; background:var(--negro-card); border-radius:10px; margin-top:.75rem;
+  }
+  #mod-qr-output canvas, #mod-qr-output img {
+    border-radius:6px; border:3px solid var(--secundario);
+  }
+  .id-chip {
+    font-family:monospace; font-size:.75rem; padding:.25rem .6rem;
+    background:var(--negro); border:1px solid var(--secundario);
+    color:var(--secundario); border-radius:5px;
+  }
+  .scan-container { position:relative; border-radius:10px; overflow:hidden; background:#000; aspect-ratio:1; }
+  .scan-video { width:100%; height:100%; object-fit:cover; }
+  .scan-frame-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+  .scan-frame { width:55%; aspect-ratio:1; border:2px solid var(--primario); border-radius:10px; box-shadow:0 0 0 9999px rgba(0,0,0,.5); }
+  .result-box { background:var(--negro-card); border:1px solid var(--verde); border-radius:10px; padding:1rem; margin-top:.75rem; display:none; }
+  .result-box.show { display:block; }
+  .result-row { display:flex; justify-content:space-between; padding:.35rem 0; border-bottom:1px solid var(--negro-borde); font-size:.78rem; }
+  .result-row:last-child { border-bottom:none; }
+  .rk { color:var(--gris); }
+  .rv { color:var(--blanco); text-align:right; word-break:break-all; }
+  .toast {
+    position:fixed; bottom:1rem; left:50%; transform:translateX(-50%);
+    padding:.5rem 1rem; border-radius:7px; font-size:.78rem; font-weight:600;
+    z-index:999; display:none; max-width:90vw; text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="modulo-header">
+  <span class="modulo-badge">Módulo</span>
+  <span class="modulo-titulo">QR Manager</span>
+  <span style="margin-left:auto;font-size:.7rem;color:var(--gris)" id="rol-label">—</span>
+</div>
+
+<div class="modo-tabs">
+  <button class="modo-btn active" onclick="setModo('crear',this)">＋ Crear</button>
+  <button class="modo-btn" onclick="setModo('leer',this)">◎ Leer</button>
+</div>
+
+<!-- CREAR -->
+<div id="mod-crear">
+  <label>Tipo de QR</label>
+  <select id="mod-tipo" onchange="modActualizarForm()">
+    <option value="">— Selecciona —</option>
+  </select>
+  <div id="mod-form"></div>
+  <button class="btn btn-p" id="mod-btn-generar" style="display:none" onclick="modGenerarQR()">Generar QR</button>
+
+  <div id="mod-resultado" style="display:none">
+    <div class="qr-box">
+      <div id="mod-qr-output"></div>
+      <span class="id-chip" id="mod-id-chip">—</span>
+      <span style="font-size:.7rem;color:var(--gris)" id="mod-meta"></span>
+    </div>
+    <button class="btn btn-s" onclick="modDescargar()">Descargar PNG</button>
+  </div>
+</div>
+
+<!-- LEER -->
+<div id="mod-leer" style="display:none">
+  <div class="scan-container">
+    <video class="scan-video" id="mod-video" autoplay playsinline muted></video>
+    <div class="scan-frame-overlay"><div class="scan-frame"></div></div>
+  </div>
+  <canvas id="mod-canvas" style="display:none"></canvas>
+  <button class="btn btn-p" id="mod-btn-cam" onclick="modToggleCam()">Activar Cámara</button>
+  <div style="text-align:center;margin:.5rem 0;font-size:.7rem;color:var(--gris)">— o sube imagen —</div>
+  <input type="file" accept="image/*" onchange="modLeerImagen(event)">
+  <div class="result-box" id="mod-result-box">
+    <div id="mod-result-rows"></div>
+  </div>
+</div>
+
+<div class="toast" id="mod-toast"></div>
+
+<script>
+// ── LEER PARÁMETROS URL ──
+const params = new URLSearchParams(window.location.search);
+const ROL = params.get('rol') || 'admin';
+const TIPO_FIJO = params.get('tipo') || '';
+const MODO_INICIAL = params.get('modo') || 'crear';
+const COLOR_P = params.get('color_primario') || '#f97316';
+const COLOR_S = params.get('color_secundario') || '#d4af37';
+
+// Aplicar colores dinámicos
+document.documentElement.style.setProperty('--primario', decodeURIComponent(COLOR_P));
+document.documentElement.style.setProperty('--secundario', decodeURIComponent(COLOR_S));
+
+// Permisos
+const PERMS = {
+  admin:   ['agente','producto','servicio','info','compra'],
+  agente:  ['agente','producto','servicio'],
+  usuario: ['info']
+};
+
+const LABELS = {
+  agente:'Agente', producto:'Producto', servicio:'Servicio',
+  info:'Información', compra:'Compra / Remesa'
+};
+
+const CAMPOS = {
+  agente:   [{id:'nombre',l:'Nombre',r:true},{id:'zona',l:'Zona',r:true},{id:'telefono',l:'Teléfono',r:false},{id:'especialidad',l:'Especialidad',t:'select',ops:['Remesas','Divisas','Productos','Servicios','General']},{id:'horario',l:'Horario',r:false}],
+  producto: [{id:'nombre',l:'Nombre del producto',r:true},{id:'descripcion',l:'Descripción',t:'textarea'},{id:'precio',l:'Precio CUP',t:'number'},{id:'disponibilidad',l:'Disponibilidad',t:'select',ops:['Disponible','Agotado','Por encargo']},{id:'contacto',l:'Contacto',r:false}],
+  servicio: [{id:'nombre',l:'Nombre del servicio',r:true},{id:'descripcion',l:'Descripción',t:'textarea'},{id:'precio',l:'Tarifa CUP',t:'number'},{id:'proveedor',l:'Proveedor',r:false},{id:'zona',l:'Zona de cobertura',r:false}],
+  info:     [{id:'titulo',l:'Título',r:true},{id:'contenido',l:'Contenido',t:'textarea',r:true},{id:'url',l:'Enlace (opcional)',t:'url'},{id:'vigencia',l:'Válido hasta',t:'date'}],
+  compra:   [{id:'orden_id',l:'ID de Orden',r:true},{id:'remitente',l:'Remitente',r:true},{id:'beneficiario',l:'Beneficiario',r:true},{id:'monto',l:'Monto CUP',t:'number',r:true},{id:'agente_destino',l:'Agente destino',r:false}]
+};
+
+// ── INIT ──
+window.addEventListener('load', () => {
+  document.getElementById('rol-label').textContent = 'Rol: ' + ROL.toUpperCase();
+
+  // Poblar select de tipos según rol
+  const sel = document.getElementById('mod-tipo');
+  const tipos = TIPO_FIJO ? [TIPO_FIJO] : (PERMS[ROL] || PERMS.usuario);
+  tipos.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t; o.textContent = LABELS[t];
+    sel.appendChild(o);
+  });
+  if (TIPO_FIJO) { sel.value = TIPO_FIJO; modActualizarForm(); }
+  if (MODO_INICIAL === 'leer') setModo('leer', document.querySelectorAll('.modo-btn')[1]);
+});
+
+function setModo(modo, btn) {
+  document.querySelectorAll('.modo-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('mod-crear').style.display = modo === 'crear' ? 'block' : 'none';
+  document.getElementById('mod-leer').style.display = modo === 'leer' ? 'block' : 'none';
+  if (modo !== 'leer') modPararCam();
+}
+
+function modActualizarForm() {
+  const tipo = document.getElementById('mod-tipo').value;
+  const formEl = document.getElementById('mod-form');
+  const btnGen = document.getElementById('mod-btn-generar');
+  document.getElementById('mod-resultado').style.display = 'none';
+
+  if (!tipo) { formEl.innerHTML = ''; btnGen.style.display = 'none'; return; }
+
+  let html = '';
+  CAMPOS[tipo].forEach(c => {
+    html += `<label>${c.l}${c.r?' <span style="color:var(--primario)">*</span>':''}</label>`;
+    if (c.t === 'textarea') html += `<textarea id="mf-${c.id}"></textarea>`;
+    else if (c.t === 'select') {
+      html += `<select id="mf-${c.id}">${c.ops.map(o=>`<option>${o}</option>`).join('')}</select>`;
+    } else {
+      html += `<input type="${c.t||'text'}" id="mf-${c.id}">`;
+    }
+  });
+  formEl.innerHTML = html;
+  btnGen.style.display = 'block';
+}
+
+function modGenerarID(tipo) {
+  const p={agente:'AGT',producto:'PRD',servicio:'SRV',info:'INF',compra:'CMP'};
+  const n = Math.floor(Math.random()*90000)+10000;
+  const s = Math.random().toString(36).substr(2,3).toUpperCase();
+  return `${p[tipo]||'QR'}-${n}-${s}`;
+}
+
+function modHash(s) {
+  let h=0; for(let i=0;i<s.length;i++) h=Math.imul(31,h)+s.charCodeAt(i)|0;
+  return Math.abs(h).toString(16).substr(0,6).toUpperCase();
+}
+
+let modDatosActuales = null;
+
+function modGenerarQR() {
+  const tipo = document.getElementById('mod-tipo').value;
+  if (!tipo) return;
+  const datos = { tipo };
+  let ok = true;
+  CAMPOS[tipo].forEach(c => {
+    const el = document.getElementById('mf-' + c.id);
+    if (!el) return;
+    const v = el.value.trim();
+    if (c.r && !v) { el.style.borderColor='var(--rojo)'; ok=false; }
+    else { el.style.borderColor=''; if(v) datos[c.id]=v; }
+  });
+  if (!ok) return;
+
+  datos.id = modGenerarID(tipo);
+  datos.ts = new Date().toISOString().split('T')[0];
+  datos.rol_emisor = ROL;
+  datos.hash = modHash(JSON.stringify(datos));
+
+  const out = document.getElementById('mod-qr-output');
+  out.innerHTML = '';
+  new QRCode(out, {
+    text: JSON.stringify(datos),
+    width: 180, height: 180,
+    colorDark: '#0a0a0a', colorLight: '#f5f5f0',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  document.getElementById('mod-id-chip').textContent = datos.id;
+  document.getElementById('mod-meta').textContent = `${tipo.toUpperCase()} · ${datos.ts}`;
+  document.getElementById('mod-resultado').style.display = 'block';
+  modDatosActuales = datos;
+
+  // Notificar a plataforma padre
+  window.parent.postMessage({ evento: 'qr_generado', datos }, '*');
+}
+
+function modDescargar() {
+  const canvas = document.querySelector('#mod-qr-output canvas');
+  if (!canvas) return;
+  try {
+    const link = document.createElement('a');
+    link.download = `QR-${modDatosActuales?.id||'qr'}.png`;
+    link.href = canvas.toDataURL('image/png');
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  } catch(e) {
+    const w = window.open('','_blank');
+    w.document.write(`<html><body style="background:#000;display:flex;flex-direction:column;align-items:center;padding:20px;gap:12px">
+      <p style="color:#f97316;font-family:sans-serif;font-size:13px">Mantén presionada la imagen → Guardar</p>
+      <img src="${canvas.toDataURL('image/png')}" style="max-width:100%;border:3px solid #d4af37;border-radius:8px">
+    </body></html>`);
+  }
+}
+
+// ── LECTOR ──
+let modStream = null, modInterval = null, modCamOn = false;
+
+async function modToggleCam() {
+  if (modCamOn) { modPararCam(); return; }
+  const video = document.getElementById('mod-video');
+  const btn = document.getElementById('mod-btn-cam');
+  try {
+    modStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' } });
+    video.srcObject = modStream;
+    modCamOn = true;
+    btn.textContent = 'Detener';
+    btn.style.background = 'var(--rojo)';
+    const canvas = document.getElementById('mod-canvas');
+    const ctx = canvas.getContext('2d');
+    modInterval = setInterval(() => {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+        const img = ctx.getImageData(0,0,canvas.width,canvas.height);
+        const code = jsQR(img.data, img.width, img.height);
+        if (code) { modProcesar(code.data); modPararCam(); }
+      }
+    }, 300);
+  } catch(e) { modToast('Sin acceso a cámara', 'rojo'); }
+}
+
+function modPararCam() {
+  if (modStream) { modStream.getTracks().forEach(t=>t.stop()); modStream=null; }
+  if (modInterval) { clearInterval(modInterval); modInterval=null; }
+  modCamOn = false;
+  const btn = document.getElementById('mod-btn-cam');
+  if (btn) { btn.textContent='Activar Cámara'; btn.style.background=''; }
+}
+
+function modLeerImagen(e) {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width=img.width; c.height=img.height;
+      c.getContext('2d').drawImage(img,0,0);
+      const code = jsQR(c.getContext('2d').getImageData(0,0,c.width,c.height).data, c.width, c.height);
+      if (code) modProcesar(code.data);
+      else modToast('No se detectó QR en la imagen','rojo');
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function modProcesar(raw) {
+  let datos;
+  try { datos = JSON.parse(raw); } catch { datos = { tipo:'info', contenido:raw }; }
+  const rows = document.getElementById('mod-result-rows');
+  const omitir = ['tipo','hash','rol_emisor'];
+  let html = `<div style="font-size:.65rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--secundario);margin-bottom:.5rem">${(datos.tipo||'qr').toUpperCase()}</div>`;
+  Object.entries(datos).forEach(([k,v]) => {
+    if (omitir.includes(k)) return;
+    html += `<div class="result-row"><span class="rk">${k}</span><span class="rv">${v}</span></div>`;
+  });
+  rows.innerHTML = html;
+  document.getElementById('mod-result-box').classList.add('show');
+
+  // Notificar a plataforma padre
+  window.parent.postMessage({ evento: 'qr_leido', datos }, '*');
+  modToast('QR leído correctamente', 'verde');
+}
+
+function modToast(msg, color='verde') {
+  const t = document.getElementById('mod-toast');
+  t.textContent = msg;
+  t.style.background = color==='verde' ? '#22c55e' : color==='rojo' ? '#ef4444' : '#f97316';
+  t.style.color = '#000';
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display='none'; }, 2800);
+}
+</script>
+</body>
+</html>
