@@ -1367,3 +1367,80 @@ function abrirModal(idx) {
       </div>`;
   });
   document.getElementById('modal-body').i
+
+const btnElim = document.getElementById('btn-eliminar');
+  btnElim.style.display = PERMISOS[rolActual].eliminar ? 'block' : 'none';
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function cerrarModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('open');
+  qrModalIndex = null;
+}
+
+function eliminarQRActual() {
+  if (qrModalIndex === null) return;
+  if (!confirm('¿Eliminar este QR de la galería?')) return;
+  galeria.splice(qrModalIndex, 1);
+  localStorage.setItem('qr_galeria', JSON.stringify(galeria));
+  cerrarModal();
+  renderGaleria();
+}
+
+// ════════════════════════════════════════
+// PERMISOS TABLE
+// ════════════════════════════════════════
+function renderPermisos() {
+  const roles = ['admin', 'agente', 'usuario'];
+  const acciones = [
+    { key: 'crear_agente', label: 'Crear QR Agente' },
+    { key: 'crear_producto', label: 'Crear QR Producto' },
+    { key: 'crear_servicio', label: 'Crear QR Servicio' },
+    { key: 'crear_info', label: 'Crear QR Info' },
+    { key: 'crear_compra', label: 'Crear QR Compra' },
+    { key: 'leer', label: 'Leer / Escanear QR' },
+    { key: 'galeria', label: 'Ver Galería' },
+    { key: 'eliminar', label: 'Eliminar QR' },
+  ];
+
+  const tienePermiso = (rol, accion) => {
+    const p = PERMISOS[rol];
+    if (accion === 'leer') return p.leer;
+    if (accion === 'eliminar') return p.eliminar;
+    if (accion === 'galeria') return !!p.galeria;
+    if (accion.startsWith('crear_')) {
+      return p.crear.includes(accion.replace('crear_', ''));
+    }
+    return false;
+  };
+
+  let html = `
+    <div style="display:grid;grid-template-columns:1fr repeat(3,auto);gap:.3rem;font-size:.7rem;margin-bottom:.5rem">
+      <span style="color:var(--gris)">Acción</span>
+      ${roles.map(r => `<span style="color:var(--dorado);text-align:center;font-weight:700;text-transform:uppercase;letter-spacing:.05em">${r}</span>`).join('')}
+    </div>`;
+
+  acciones.forEach(a => {
+    const esActual = rolActual;
+    html += `<div style="display:grid;grid-template-columns:1fr repeat(3,auto);gap:.3rem;padding:.45rem 0;border-bottom:1px solid var(--negro-borde);font-size:.75rem;align-items:center">
+      <span style="color:${roles.some(r => r === esActual && tienePermiso(r, a.key)) ? 'var(--blanco)' : 'var(--gris-suave)'}">${a.label}</span>
+      ${roles.map(r => `<span style="text-align:center">${tienePermiso(r, a.key) ? '<span class="perm-check">✓</span>' : '<span class="perm-x">✕</span>'}</span>`).join('')}
+    </div>`;
+  });
+
+  document.getElementById('tabla-permisos').innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+window.addEventListener('load', () => {
+  galeria = storageLeer();
+  cambiarRol('admin');
+  renderPermisos();
+});
+</script>
+</body>
+</html>
