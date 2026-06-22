@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Manager â€” Demo de IntegraciÃ³n</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:#0a0a0a; color:#f5f5f0; font-family:'Segoe UI',system-ui,sans-serif; }
+  header {
+    background:#141414; border-bottom:1px solid #2a2a2a;
+    padding:1rem 1.5rem; display:flex; align-items:center; gap:1rem;
+  }
+  .logo { font-size:1.1rem; font-weight:700; color:#f97316; }
+  .logo span { color:#d4af37; }
+  .version { font-size:.7rem; color:#555; font-family:monospace; }
+  main { max-width:900px; margin:0 auto; padding:2rem 1rem; }
+  h2 { font-size:1rem; color:#d4af37; margin:2rem 0 1rem; letter-spacing:.05em; text-transform:uppercase; }
+  h2:first-of-type { margin-top:0; }
+  p { font-size:.85rem; color:#888; line-height:1.7; margin-bottom:.75rem; }
+  .code-block {
+    background:#141414; border:1px solid #2a2a2a; border-radius:10px;
+    padding:1.25rem; font-family:monospace; font-size:.78rem;
+    color:#f5f5f0; overflow-x:auto; margin-bottom:1rem; line-height:1.7;
+    white-space:pre;
+  }
+  .hl-naranja { color:#f97316; }
+  .hl-dorado { color:#d4af37; }
+  .hl-verde { color:#22c55e; }
+  .hl-gris { color:#888; }
+  .demo-frame {
+    border:1px solid #2a2a2a; border-radius:12px; overflow:hidden;
+    margin-bottom:1rem;
+  }
+  .demo-label {
+    background:#141414; padding:.5rem 1rem; font-size:.7rem;
+    color:#555; letter-spacing:.08em; text-transform:uppercase;
+    border-bottom:1px solid #2a2a2a; font-family:monospace;
+  }
+  iframe { width:100%; height:500px; border:none; background:#0a0a0a; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  @media(max-width:600px) { .grid { grid-template-columns:1fr; } }
+  .card {
+    background:#141414; border:1px solid #2a2a2a; border-radius:10px; padding:1rem;
+  }
+  .card-title { font-size:.7rem; font-weight:700; color:#f97316; letter-spacing:.08em;
+    text-transform:uppercase; margin-bottom:.5rem; }
+  .tag {
+    display:inline-block; padding:.15rem .5rem; border-radius:4px; font-size:.65rem;
+    font-weight:700; letter-spacing:.05em; margin-right:.3rem; margin-bottom:.3rem;
+  }
+  .tag-ok { background:rgba(34,197,94,.15); color:#22c55e; border:1px solid #22c55e; }
+  .tag-no { background:rgba(239,68,68,.15); color:#ef4444; border:1px solid #ef4444; }
+  footer {
+    border-top:1px solid #2a2a2a; padding:1.5rem; text-align:center;
+    font-size:.75rem; color:#555; margin-top:3rem;
+  }
+  footer a { color:#f97316; text-decoration:none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">QR<span>Manager</span></div>
+  <div class="version">v1.0.0 Â· Demo de integraciÃ³n</div>
+</header>
+
+<main>
+
+  <h2>Â¿QuÃ© es esto?</h2>
+  <p>
+    QR Manager es una <strong style="color:#f5f5f0">aplicaciÃ³n completa</strong> y al mismo tiempo
+    un <strong style="color:#f5f5f0">mÃ³dulo listo para inyectar</strong> en cualquier plataforma web,
+    sistema de gestiÃ³n, o app existente. No necesita backend. Funciona offline.
+    Desarrollado por <strong style="color:#f97316">Verbum Tech Solution</strong>.
+  </p>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-title">Como aplicaciÃ³n</div>
+      <p style="font-size:.78rem">Abre <code style="color:#d4af37">index.html</code> directamente o
+      publÃ­calo en GitHub Pages. Listo para usar sin configuraciÃ³n.</p>
+      <span class="tag tag-ok">Sin backend</span>
+      <span class="tag tag-ok">Sin instalaciÃ³n</span>
+      <span class="tag tag-ok">Offline</span>
+    </div>
+    <div class="card">
+      <div class="card-title">Como mÃ³dulo</div>
+      <p style="font-size:.78rem">Integra vÃ­a <code style="color:#d4af37">iframe</code>,
+      <code style="color:#d4af37">script tag</code>, o <code style="color:#d4af37">postMessage API</code>
+      en React, Vue, o cualquier HTML.</p>
+      <span class="tag tag-ok">iframe</span>
+      <span class="tag tag-ok">JS API</span>
+      <span class="tag tag-ok">postMessage</span>
+    </div>
+  </div>
+
+  <!-- DEMO IFRAME -->
+  <h2>Demo â€” MÃ³dulo embebido via iframe</h2>
+  <p>Esto es el mÃ³dulo corriendo dentro de esta pÃ¡gina como iframe.
+  Los datos que genera se comunican con la plataforma padre via <code style="color:#d4af37">postMessage</code>.</p>
+
+  <div class="demo-frame">
+    <div class="demo-label">iframe src="qr-module.html?rol=agente&modo=crear"</div>
+    <iframe src="qr-module.html?rol=agente&modo=crear" id="iframe-demo"></iframe>
+  </div>
+
+  <div class="card" id="log-eventos">
+    <div class="card-title">ðŸ“¡ Eventos recibidos del mÃ³dulo</div>
+    <p style="font-size:.75rem;font-family:monospace;color:#555" id="log-texto">
+      Genera un QR arriba para ver los datos aquÃ­...
+    </p>
+  </div>
+
+  <!-- INTEGRACIÃ“N IFRAME -->
+  <h2>IntegraciÃ³n por iframe</h2>
+  <div class="code-block"><span class="hl-gris">&lt;!-- OpciÃ³n mÃ¡s simple: un iframe --&gt;</span>
+<span class="hl-naranja">&lt;iframe</span>
+  <span class="hl-dorado">src</span>="qr-module.html<span class="hl-verde">?rol=agente&tipo=agente&modo=crear</span>"
+  width="100%"
+  height="500px"
+  id="qr-frame"
+<span class="hl-naranja">&gt;&lt;/iframe&gt;</span>
+
+<span class="hl-gris">&lt;!-- Escuchar datos generados --&gt;</span>
+<span class="hl-naranja">&lt;script&gt;</span>
+  window.addEventListener('message', function(e) {
+    if (e.data.evento === '<span class="hl-verde">qr_generado</span>') {
+      console.log('QR creado:', e.data.datos);
+      <span class="hl-gris">// Guardar en tu base de datos aquÃ­</span>
+    }
+    if (e.data.evento === '<span class="hl-verde">qr_leido</span>') {
+      console.log('QR escaneado:', e.data.datos);
+      <span class="hl-gris">// Ejecutar lÃ³gica de tu plataforma aquÃ­</span>
+    }
+  });
+<span class="hl-naranja">&lt;/script&gt;</span></div>
+
+  <!-- PARÃMETROS URL -->
+  <h2>ParÃ¡metros URL disponibles</h2>
+  <div class="code-block"><span class="hl-gris"># Rol del usuario</span>
+qr-module.html?<span class="hl-dorado">rol</span>=<span class="hl-verde">admin</span>|agente|usuario
+
+<span class="hl-gris"># Tipo de QR predefinido (salta la selecciÃ³n)</span>
+qr-module.html?<span class="hl-dorado">tipo</span>=<span class="hl-verde">agente</span>|producto|servicio|info|compra
+
+<span class="hl-gris"># Modo inicial</span>
+qr-module.html?<span class="hl-dorado">modo</span>=<span class="hl-verde">crear</span>|leer
+
+<span class="hl-gris"># Colores personalizados (codificar # como %23)</span>
+qr-module.html?<span class="hl-dorado">color_primario</span>=<span class="hl-verde">%23ff6600</span>&<span class="hl-dorado">color_secundario</span>=<span class="hl-verde">%23gold</span>
+
+<span class="hl-gris"># CombinaciÃ³n completa</span>
+qr-module.html?rol=agente&tipo=agente&modo=crear&color_primario=%23f97316</div>
+
+  <!-- JS API -->
+  <h2>JavaScript API (integraciÃ³n profunda)</h2>
+  <div class="code-block"><span class="hl-gris">&lt;!-- 1. Cargar dependencias --&gt;</span>
+<span class="hl-naranja">&lt;script</span> src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"<span class="hl-naranja">&gt;&lt;/script&gt;</span>
+<span class="hl-naranja">&lt;script</span> src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"<span class="hl-naranja">&gt;&lt;/script&gt;</span>
+<span class="hl-naranja">&lt;script</span> src="js/qr-module.js"<span class="hl-naranja">&gt;&lt;/script&gt;</span>
+
+<span class="hl-gris">&lt;!-- 2. Inicializar --&gt;</span>
+<span class="hl-naranja">&lt;script&gt;</span>
+  QRManager.<span class="hl-dorado">init</span>({
+    rol: '<span class="hl-verde">agente</span>',
+    tema: {
+      primario: '<span class="hl-verde">#f97316</span>',
+      secundario: '<span class="hl-verde">#d4af37</span>'
+    },
+    onGenerar: function(datos) {
+      <span class="hl-gris">// Se dispara al generar un QR</span>
+      fetch('/api/qr', {
+        method: 'POST',
+        body: JSON.stringify(datos)
+      });
+    },
+    onLeer: function(datos) {
+      <span class="hl-gris">// Se dispara al escanear un QR</span>
+      if (datos.tipo === 'agente') {
+        abrirPerfilAgente(datos.id);
+      }
+    }
+  });
+
+  <span class="hl-gris">// Generar QR programÃ¡ticamente</span>
+  const contenedor = document.getElementById('mi-qr');
+  QRManager.<span class="hl-dorado">generar</span>('agente', {
+    nombre: 'Juan PÃ©rez',
+    zona: 'Habana del Este',
+    especialidad: 'Remesas'
+  }, contenedor);
+
+  <span class="hl-gris">// Leer QR desde imagen</span>
+  QRManager.<span class="hl-dorado">leerImagen</span>(archivoFile).then(datos => {
+    console.log('LeÃ­do:', datos);
+    console.log('Ãntegro:', QRManager.<span class="hl-dorado">verificar</span>(datos));
+  });
+<span class="hl-naranja">&lt;/script&gt;</span></div>
+
+  <!-- SUPABASE -->
+  <h2>IntegraciÃ³n con Supabase</h2>
+  <div class="code-block"><span class="hl-gris">-- Tabla para guardar QR generados</span>
+<span class="hl-naranja">CREATE TABLE</span> qr_codes (
+  id            TEXT <span class="hl-naranja">PRIMARY KEY</span>,
+  tipo          TEXT <span class="hl-naranja">NOT NULL</span>,
+  nombre        TEXT,
+  zona          TEXT,
+  datos         <span class="hl-dorado">JSONB</span>,
+  rol_emisor    TEXT,
+  hash          TEXT,
+  ts            DATE,
+  guardado      TIMESTAMPTZ <span class="hl-naranja">DEFAULT NOW</span>()
+);
+
+<span class="hl-gris">-- Ãndices para bÃºsqueda rÃ¡pida</span>
+<span class="hl-naranja">CREATE INDEX</span> ON qr_codes (tipo);
+<span class="hl-naranja">CREATE INDEX</span> ON qr_codes (rol_emisor);
+<span class="hl-naranja">CREATE INDEX</span> ON qr_codes <span class="hl-naranja">USING GIN</span> (datos);</div>
+
+  <div class="code-block"><span class="hl-gris">// JavaScript â€” guardar en Supabase al generar</span>
+QRManager.init({
+  onGenerar: <span class="hl-naranja">async</span> (datos) => {
+    const { error } = <span class="hl-naranja">await</span> supabase
+      .from('<span class="hl-verde">qr_codes</span>')
+      .insert([{
+        id: datos.id,
+        tipo: datos.tipo,
+        nombre: datos.nombre,
+        datos: datos,
+        rol_emisor: datos.rol_emisor,
+        hash: datos.hash,
+        ts: datos.ts
+      }]);
+    if (error) console.error(error);
+  }
+});</div>
+
+</main>
+
+<footer>
+  <strong style="color:#f97316">QR Manager</strong> v1.0.0 Â·
+  Desarrollado por <a href="#">Verbum Tech Solution</a> Â·
+  Licencia MIT Â· Hecho en Cuba para el mundo
+</footer>
+
+<script>
+// Escuchar mensajes del iframe demo
+window.addEventListener('message', function(e) {
+  const log = document.getElementById('log-texto');
+  if (e.data && (e.data.evento === 'qr_generado' || e.data.evento === 'qr_leido')) {
+    const color = e.data.evento === 'qr_generado' ? '#f97316' : '#22c55e';
+    log.innerHTML = `<span style="color:${color};font-weight:700">[${e.data.evento}]</span> ` +
+      JSON.stringify(e.data.datos, null, 2)
+        .replace(/(".*?")/g, '<span style="color:#d4af37">$1</span>');
+  }
+});
+</script>
+</body>
+</html>
